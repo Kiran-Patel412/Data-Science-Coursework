@@ -27,20 +27,20 @@ GDP_per_capita <- GDP_per_capita %>%
 
 
 # Combine data sets
-GDP_with_continents <- full_join(Sorted_continents, GDP_per_capita)
+GDP_with_Continents <- full_join(Sorted_continents, GDP_per_capita)
 
 # Create sets for each continent
-Africa_GDP <- GDP_with_continents %>%
+Africa_GDP <- GDP_with_Continents %>%
   filter(Continent == "Africa")
-Asia_GDP <- GDP_with_continents %>%
+Asia_GDP <- GDP_with_Continents %>%
   filter(Continent == "Asia")
-Europe_GDP <- GDP_with_continents %>%
+Europe_GDP <- GDP_with_Continents %>%
   filter(Continent == "Europe")
-North_America_GDP <- GDP_with_continents %>%
+North_America_GDP <- GDP_with_Continents %>%
   filter(Continent == "North America")
-Oceania_GDP <- GDP_with_continents %>%
+Oceania_GDP <- GDP_with_Continents %>%
   filter(Continent == "Oceania")
-South_America_GDP <- GDP_with_continents %>%
+South_America_GDP <- GDP_with_Continents %>%
   filter(Continent == "South America")
 
 
