@@ -56,7 +56,6 @@ Europe_GDP <- GDP_with_Continents %>%
   # order by country, followed by chronology
   arrange(Entity, Year)
 
-
 North_America_GDP <- GDP_with_Continents %>%
   # select countries in North America
   filter(Continent == "North America") %>%
@@ -110,18 +109,21 @@ South_America_GDP_Growth_Rate <- compute_growth(South_America_GDP)
 
 
 
+
 # Plot graphs for each country's GDP and GDP growth rate in each Continent
 library(ggplot2)
 
 # Plot graph for GDP growth
 graph_growth <- function(df) {
-ggplot(df, aes(x = Year, y = GDP_Growth, colour = Entity)) +
+  ggplot(df, aes(x = Year, y = GDP_Growth, colour = Entity)) +
+    # Each country has a different colour for better visualisation
   geom_line(linewidth = 0.2) +
   labs(
     x = "Year",
     y = "GDP per capita growth (PPP)",
     title = "Graph of GDP per capita Growth against Time"
   ) +
+  # Minimal theme for cleaner plot
   theme_minimal()
 }
 
@@ -137,13 +139,15 @@ graph_growth(South_America_GDP_Growth_Rate)
 # Use line of best fit
 graph_average_growth <- function(df) {
   ggplot(df, aes(x = Year, y = GDP_Growth, colour = Entity)) +
-    geom_smooth(method = "lm", se = FALSE, linewidth = 0.2) +
-    labs(
-      x = "Year",
-      y = "GDP per capita growth (PPP)",
-      title = "Graph of GDP per capita Growth Trend against Time"
+    # Each country has a different colour for better visualisation
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.2) +
+  labs(
+    x = "Year",
+    y = "GDP per capita growth (PPP)",
+    title = "Graph of GDP per capita Growth Trend against Time"
     ) +
-    theme_minimal()
+  # Minimal theme for cleaner plot
+  theme_minimal()
 }
 
 # Create plots for each Continent
@@ -154,7 +158,7 @@ graph_average_growth(North_America_GDP_Growth_Rate)
 graph_average_growth(Oceania_GDP_Growth_Rate)
 graph_average_growth(South_America_GDP_Growth_Rate)
 
-# Save all graphs
+# Save all graphs with line of best fit
 ggsave(
   filename = "Africa GDP Growth Regression.png",
   plot = graph_average_growth(Africa_GDP_Growth_Rate),
@@ -193,16 +197,20 @@ ggsave(
 )
 
 
+
+
 # Plot graph for GDP growth rate
 graph_growth_rate <- function(df) {
   ggplot(df, aes(x = Year, y = GDP_Growth_Rate, colour = Entity)) +
-    geom_line(linewidth = 0.2) +
-    labs(
-      x = "Year",
-      y = "GDP per capita growth rate (%)",
-      title = "Graph of GDP per capita Growth Rate against Time"
+    # Each country has a different colour for better visualisation
+  geom_line(linewidth = 0.2) +
+  labs(
+    x = "Year",
+    y = "GDP per capita growth rate (%)",
+    title = "Graph of GDP per capita Growth Rate against Time"
     ) +
-    theme_minimal()
+  # Minimal theme for cleaner plot
+  theme_minimal()
 }
 
 # Create plots for each Continent
@@ -217,13 +225,15 @@ graph_growth_rate(South_America_GDP_Growth_Rate)
 # Use line of best fit
 graph_average_growth_rate <- function(df) {
   ggplot(df, aes(x = Year, y = GDP_Growth_Rate, colour = Entity)) +
-    geom_smooth(method = "lm", se = FALSE, linewidth = 0.2) +
-    labs(
-      x = "Year",
-      y = "GDP per capita growth rate (%)",
-      title = "Graph of GDP per capita Growth Rate Trend against Time"
+    # Each country has a different colour for better visualisation
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.2) +
+  labs(
+    x = "Year",
+    y = "GDP per capita growth rate (%)",
+    title = "Graph of GDP per capita Growth Rate Trend against Time"
     ) +
-    theme_minimal()
+  # Minimal theme for cleaner plot
+  theme_minimal()
 }
 
 # Create plots for each Continent
@@ -234,7 +244,7 @@ graph_average_growth_rate(North_America_GDP_Growth_Rate)
 graph_average_growth_rate(Oceania_GDP_Growth_Rate)
 graph_average_growth_rate(South_America_GDP_Growth_Rate)
 
-# Save all graphs
+# Save all graphs with line of best fit
 ggsave(
   filename = "Africa GDP Growth Rate Regression.png",
   plot = graph_average_growth_rate(Africa_GDP_Growth_Rate),
