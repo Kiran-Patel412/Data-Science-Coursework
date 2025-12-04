@@ -347,3 +347,48 @@ ggsave(
   width = 12,
   height = 8,
 )
+
+
+
+
+
+
+
+
+# Part 2 of Task 1
+Additional_csv_1 <- read.csv("~/Downloads/UNSD — Methodology.csv", header=FALSE, sep=";")
+
+# Re-format table to make first row the Column titles
+colnames(Additional_csv_1) <- Additional_csv_1[1, ]
+
+# Convert to character in case of factor
+Additional_csv_1$"Least Developed Countries (LDC)" <- as.character(Additional_csv_1$"Least Developed Countries (LDC)")
+
+# Make blank rows "NA"
+Additional_csv_1$"Least Developed Countries (LDC)"[Additional_csv_1$"Least Developed Countries (LDC)" == ""] <- NA
+
+# Delete the first row and keep only country and LDC columns
+LDCs <- Additional_csv_1[-1, ] %>%
+  select("Country or Area", "Least Developed Countries (LDC)") %>%
+  filter(!is.na(`Least Developed Countries (LDC)`))
+
+# Create data frame of all countries' GDP Growth Rates
+Countries_GDP_Growth_Rate <- rbind(Africa_GDP_Growth_Rate, Asia_GDP_Growth_Rate, Europe_GDP_Growth_Rate, North_America_GDP_Growth_Rate, Oceania_GDP_Growth_Rate, South_America_GDP_Growth_Rate)
+
+# Create data frame of LDCs' GDP Growth Rates
+LDCs_GDP_Growth_Rate <- inner_join(LDCs, Countries_GDP_Growth_Rate,
+                           by = c("Country or Area" = "Entity")) %>%
+LDCs_GDP_Growth_Rate <- LDCs_GDP_Growth_Rate[ , -2]
+
+
+
+
+
+
+
+
+
+
+
+
+
