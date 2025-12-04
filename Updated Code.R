@@ -356,7 +356,7 @@ ggsave(
 
 
 # Part 2 of Task 1
-Additional_csv_1 <- read.csv("~/Downloads/UNSD — Methodology.csv", header=FALSE, sep=";")
+Additional_csv_1 <- read.csv("~/Documents/GitHub/Data-Science-Coursework/UNSD — Methodology.csv", header=FALSE, sep=";")
 
 # Re-format table to make first row the Column titles
 colnames(Additional_csv_1) <- Additional_csv_1[1, ]
