@@ -367,7 +367,7 @@ Additional_csv_1$"Least Developed Countries (LDC)" <- as.character(Additional_cs
 # Make blank rows "NA"
 Additional_csv_1$"Least Developed Countries (LDC)"[Additional_csv_1$"Least Developed Countries (LDC)" == ""] <- NA
 
-# Delete the first row and keep only country and LDC columns
+# Delete the first row + keep only country and LDC columns + keep rows where countries are LDCs
 LDCs <- Additional_csv_1[-1, ] %>%
   select("Country or Area", "Least Developed Countries (LDC)") %>%
   filter(!is.na(`Least Developed Countries (LDC)`))
