@@ -351,6 +351,11 @@ ggsave(
   height = 8,
 )
 
+
+
+
+
+
 # Part 2 of Task 1
 Additional_csv_1 <- read.csv("UNSD — Methodology.csv", header=FALSE, sep=";")
 
