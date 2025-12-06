@@ -386,12 +386,15 @@ LDCs_GDP_Growth_Rate <- LDCs_GDP_Growth_Rate[ , -2]
 
 
 # Graph of LDCs GDP growth rate against time
-ggplot(LDCs_GDP_Growth_Rate,
+Graph_LDCs <- ggplot(LDCs_GDP_Growth_Rate,
        aes(x = Year,
            y = GDP_Growth_Rate,
            group = `Country or Area`,
            colour = `Country or Area`)) +
-  geom_line() +
+  geom_line(linewidth = 0.2) +
+  
+  # Add a dashed line at 7% target
+  geom_hline(yintercept = 7, linetype = "dashed", colour = "black", linewidth = 0.2) +
   labs(
     title = "GDP per Capita Growth Rate – Least Developed Countries",
     x = "Year",
@@ -400,7 +403,13 @@ ggplot(LDCs_GDP_Growth_Rate,
   ) +
   theme_minimal()
 
-
+# Save the graph
+ggsave(
+    filename = "LDCs GDP Growth Rate.png",
+    plot = Graph_LDCs,
+    width = 12,
+    height = 8,
+  )
 
 # Remove all terms with missing values
 max_year <- max(LDCs_GDP_Growth_Rate$Year, na.rm = TRUE)
@@ -410,12 +419,15 @@ LDC_Growth_Recent <- LDCs_GDP_Growth_Rate %>%
   filter(Year >= max_year - 4)
 
 # Graph of LDCs GDP growth rate from 2017-2021 against time
-ggplot(LDC_Growth_Recent,
+Graph_LDCs_Recent <- ggplot(LDC_Growth_Recent,
        aes(x = Year,
            y = GDP_Growth_Rate,
            group = `Country or Area`,
            colour = `Country or Area`)) +
-  geom_line() +
+  geom_line(linewidth = 0.2) +
+  
+  # Add a dashed line at 7% target
+  geom_hline(yintercept = 7, linetype = "dashed", colour = "black", linewidth = 0.2) +
   labs(
     title = "GDP per Capita Growth Rate (Last 5 Years) for Least Developed Countries",
     x = "Year",
@@ -424,6 +436,13 @@ ggplot(LDC_Growth_Recent,
   ) +
   theme_minimal()
 
+# Save the graph
+ggsave(
+  filename = "LDCs GDP Growth Rate from 2017 to 2021.png",
+  plot = Graph_LDCs_Recent,
+  width = 12,
+  height = 8,
+)
 
 # Create data frame with mean growth of LDCs per Continent per year
 Continents_LDC_Growth_Rate <- LDCs_GDP_Growth_Rate %>%
@@ -437,7 +456,7 @@ ggplot(Continents_LDC_Growth_Rate,
        aes(x = Year,
            y = Mean_Growth,
            colour = Continent)) +
-  geom_line(size = 1) +
+  geom_line(linewidth = 0.2) +
   labs(
     title = "Average GDP per Capita Growth Rate by Continent (LDCs)",
     x = "Year",
@@ -455,20 +474,24 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(sf)
 
-LDCs_Growth_Rate_2021 <- LDCs_GDP_Growth_Rate %>%
+# Keep only data from 2021
+LDCs_GDP_Growth_Rate_2021 <- LDCs_GDP_Growth_Rate %>%
   filter(Year == 2021)
 
-LDCs_Growth_Rate_2021 <- LDCs_Growth_Rate_2021 %>%
+# Categorise LDCs by GDP growth rates
+LDCs_GDP_Growth_Rate_2021 <- LDCs_GSP_Growth_Rate_2021 %>%
   mutate(Growth_Category = case_when(
       GDP_Growth_Rate >= 7  ~ "≥ 7% (Meets Target)",
       GDP_Growth_Rate >= 4  ~ "4% – 7%",
       GDP_Growth_Rate >= 0  ~ "0% – 4%",
       TRUE ~ "Negative Growth"))
 
+# Create data frame for world map graph
 World <- ne_countries(scale = "medium", returnclass = "sf")
 
+# Create data frame with GDP data
 World_LDCs <- World %>%
-  left_join(LDCs_Growth_Rate_2021, by = c("iso_a3" = "Code"))
+  left_join(LDCs_GDP_Growth_Rate_2021, by = c("iso_a3" = "Code"))
 
 # Create world map separating LDCs by growth rates
 ggplot(World_LDCs) +
