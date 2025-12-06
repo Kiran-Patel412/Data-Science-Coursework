@@ -1,6 +1,10 @@
 continents.according.to.our.world.in.data <- read.csv("continents-according-to-our-world-in-data.csv")
 gdp.per.capita.worldbank <- read.csv("gdp-per-capita-worldbank.csv", header=FALSE)
 youth.not.in.education.employment.training <- read.csv("youth-not-in-education-employment-training.csv")
+# Install packages
+install.packages("tidyverse")
+install.packages("dplyr")
+
 library(tidyverse)
 library(dplyr)
 
@@ -125,7 +129,8 @@ Average_Growth <- function(df) {
 # Combine all Continents' GDP Growth Rate in a data frame
 Continents_Growth_Rate <- rbind(Average_Growth(Africa_GDP_Growth_Rate), Average_Growth(Asia_GDP_Growth_Rate), Average_Growth(Europe_GDP_Growth_Rate), Average_Growth(North_America_GDP_Growth_Rate), Average_Growth(Oceania_GDP_Growth_Rate), Average_Growth(South_America_GDP_Growth_Rate))
 
-# Plot graph
+# Plot graphs
+install.packages("ggplot2")
 library(ggplot2)
 
 Graph_Continents_Growth_Rate <- ggplot(Continents_Growth_Rate, aes(x = Year, y = Average_GDP_Growth_Rate, colour = Continent)) +
@@ -347,6 +352,11 @@ ggsave(
   height = 8,
 )
 
+
+
+
+
+
 # Part 2 of Task 1
 Additional_csv_1 <- read.csv("UNSD — Methodology.csv", header=FALSE, sep=";")
 
@@ -369,11 +379,14 @@ Countries_GDP_Growth_Rate <- rbind(Africa_GDP_Growth_Rate, Asia_GDP_Growth_Rate,
 
 # Create data frame of LDCs' GDP Growth Rates
 LDCs_GDP_Growth_Rate <- inner_join(LDCs, Countries_GDP_Growth_Rate,
-                                   by = c("Country or Area" = "Entity")) %>%
-  LDCs_GDP_Growth_Rate_corrected <- LDCs_GDP_Growth_Rate[ , -2]
-#remove column 2 which is redundant
+                                   by = c("Country or Area" = "Entity"))
 
-ggplot(LDCs_GDP_Growth_Rate_corrected,
+# Remove column indicating if a country is a LDC
+LDCs_GDP_Growth_Rate <- LDCs_GDP_Growth_Rate[ , -2]
+
+
+# Graph of LDCs GDP growth rate against time
+ggplot(LDCs_GDP_Growth_Rate,
        aes(x = Year,
            y = GDP_Growth_Rate,
            group = `Country or Area`,
@@ -386,20 +399,18 @@ ggplot(LDCs_GDP_Growth_Rate_corrected,
     colour = "Country"
   ) +
   theme_minimal()
-# too messy we are not using this
 
 
 
-max_year <- max(LDCs_GDP_Growth_Rate_corrected$Year, na.rm = TRUE)
-max_year
-# removing all terms with missing values using na.rm
+# Remove all terms with missing values
+max_year <- max(LDCs_GDP_Growth_Rate$Year, na.rm = TRUE)
 
-
-LDC_growth_recent <- LDCs_GDP_Growth_Rate_corrected %>%
+# As the previous graph is too complicated, we are only using last 5 years for the graph
+LDC_Growth_Recent <- LDCs_GDP_Growth_Rate %>%
   filter(Year >= max_year - 4)
-#as the previous graph is too complicated, we are only using last 5 years for the graph
 
-ggplot(LDC_growth_recent,
+# Graph of LDCs GDP growth rate from 2017-2021 against time
+ggplot(LDC_Growth_Recent,
        aes(x = Year,
            y = GDP_Growth_Rate,
            group = `Country or Area`,
@@ -413,19 +424,18 @@ ggplot(LDC_growth_recent,
   ) +
   theme_minimal()
 
-library(dplyr)
-library(ggplot2)
 
-continents_growth <- LDCs_GDP_Growth_Rate_corrected %>%
+# Create data frame with mean growth of LDCs per Continent per year
+Continents_LDC_Growth_Rate <- LDCs_GDP_Growth_Rate %>%
   group_by(Continent, Year) %>%
-  summarise(mean_growth = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
+  summarise(Mean_Growth = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
   ungroup()
-#  mean growth per continent per year
 
 
-ggplot(continents_growth,
+# Graph of LDCs GDP growth rate per Continent against time
+ggplot(Continents_LDC_Growth_Rate,
        aes(x = Year,
-           y = mean_growth,
+           y = Mean_Growth,
            colour = Continent)) +
   geom_line(size = 1) +
   labs(
@@ -436,31 +446,32 @@ ggplot(continents_growth,
   ) +
   theme_minimal()
 
+# Install packages used for the map graph
 install.packages("rnaturalearth")
 install.packages("rnaturalearthdata")
 install.packages("sf")  
-#install packages used for the map graph
 
-library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
+library(sf)
 
-LDC_growth_2021 <- LDCs_GDP_Growth_Rate_corrected %>%
+LDCs_Growth_Rate_2021 <- LDCs_GDP_Growth_Rate %>%
   filter(Year == 2021)
 
-LDC_growth_2021 <- LDC_growth_2021 %>%
+LDCs_Growth_Rate_2021 <- LDCs_Growth_Rate_2021 %>%
   mutate(Growth_Category = case_when(
       GDP_Growth_Rate >= 7  ~ "≥ 7% (Meets Target)",
       GDP_Growth_Rate >= 4  ~ "4% – 7%",
       GDP_Growth_Rate >= 0  ~ "0% – 4%",
       TRUE ~ "Negative Growth"))
 
-world <- ne_countries(scale = "medium", returnclass = "sf")
+World <- ne_countries(scale = "medium", returnclass = "sf")
 
-world_LDC <- world %>%
-  left_join(LDC_growth_2021, by = c("iso_a3" = "Code"))
+World_LDCs <- World %>%
+  left_join(LDCs_Growth_Rate_2021, by = c("iso_a3" = "Code"))
 
-ggplot(world_LDC) +
+# Create world map separating LDCs by growth rates
+ggplot(World_LDCs) +
   geom_sf(aes(fill = Growth_Category), color = "grey", size = 0.1) +
   scale_fill_manual(
     values = c(
