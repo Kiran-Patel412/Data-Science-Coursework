@@ -512,7 +512,7 @@ LDC_Growth_Recent <- LDCs_GDP_Growth_Rate %>%
   filter(Year >= max_year - 4)
 
 # Graph of LDCs GDP growth rate from 2017-2021 against time
-Graph_LDCs_Recent <- ggplot(LDC_Growth_Recent)+
+Graph_LDCs_Recent <- ggplot(LDC_Growth_Recent) +
   aes(x = Year, y = GDP_Growth_Rate, group = `Country or Area`, colour = `Country or Area`) +
   geom_line(linewidth = 0.2) +
   
