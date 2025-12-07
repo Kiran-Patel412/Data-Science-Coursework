@@ -536,7 +536,7 @@ Continents_LDC_Growth_Rate <- LDCs_GDP_Growth_Rate %>%
 
 
 # Graph of LDCs GDP growth rate per Continent against time
-ggplot(Continents_LDC_Growth_Rate) +
+Graph_Continents_LDC_Growth_Rate <- ggplot(Continents_LDC_Growth_Rate) +
   aes(x = Year, y = Mean_Growth, colour = Continent) +
   geom_line(linewidth = 0.2) +
   labs(
@@ -550,7 +550,7 @@ ggplot(Continents_LDC_Growth_Rate) +
 # Save the graph
 ggsave(
   filename = "LDCs GDP Growth Rate from 2017 to 2021 by Continents.png",
-  plot = Continents_LDC_Growth_Rate,
+  plot = Graph_Continents_LDC_Growth_Rate,
   width = 12,
   height = 8,
 )
