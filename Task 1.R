@@ -672,7 +672,7 @@ ggsave(
 
 
 
-
+#Sorting LDC's into each category
 
 LDCs_According_Growth <- LDC_GDP_Growth_Recent %>%
   mutate(
@@ -684,6 +684,7 @@ LDCs_According_Growth <- LDC_GDP_Growth_Recent %>%
   summarise(LDCs_Number = length(unique(Code))) %>%
   ungroup()
 
+# Create a full grid with all combinations
 All_Years      <- 2017:2021
 All_Targets    <- c("Meets target (≥ 7%)", "Below target")
 All_Continents <- unique(LDC_GDP_Growth_Recent$Continent)
@@ -700,6 +701,7 @@ LDCs_According_Growth_Complete <- Full_Grid %>%
             by = c("Year", "Target", "Continent")) %>%
   mutate(LDCs_Number = ifelse(is.na(LDCs_Number), 0, LDCs_Number))
 
+# order bars by year
 
 LDCs_According_Growth_Complete <- LDCs_According_Growth_Complete %>%
   mutate(
