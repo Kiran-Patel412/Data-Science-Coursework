@@ -613,17 +613,19 @@ LDCs_With_Growth <- LDC_Growth_Recent %>%
   ungroup()
 
 # Graph of number of LDCs that achieved 7% GDP Growth Rate per Year by Continent
-Graph_LDCs_Achieved_Growth <- ggplot(LDCs_With_Growth) +
-  aes(x = Year, y = LDCs_Number, fill = Continent) +
+ggplot(ldc_target_complete,
+       aes(x = YearTarget,
+           y = n_ldc,
+           fill = Continent)) +
   geom_bar(stat = "identity") +
-  scale_x_continuous(breaks = unique(LDCs_With_Growth$Year)) +
   labs(
-    x = "Year",
-    y = "Number of LDCs with at least 7% GDP per capita Growth Rate",
-    fill = "Continent",
-    title = "LDCs with at least 7% GDP per capita Growth Rate by Continents per Year"
+    x = "Year and Target Group",
+    y = "Number of LDCs",
+    title = "LDCs Meeting / Not Meeting 7% GDP per Capita Growth Target\nStacked by Continent (2016–2021)",
+    fill = "Continent"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 # Save the graph
 ggsave(
@@ -632,3 +634,86 @@ ggsave(
   width = 12,
   height = 8
 )
+
+ldc_raw <- read_excel("UN LDC data.xlsx", sheet = "2024")
+ldc_codes <- ldc_raw %>%
+  filter(Status == "LDC") %>%          # only LDCs
+  transmute(Code = `ISO -3`) %>%       # backticks because of space & dash
+  distinct()
+gdp <- read_csv("gdp-per-capita-worldbank.csv")
+gdp <- gdp %>%
+  select(Entity, Code, Year,
+         gdp_pc_ppp = `GDP per capita, PPP (constant 2017 international $)`)
+continents <- read_csv("continents-according-to-our-world-in-data.csv") %>%
+  select(Code, Continent) %>%
+  distinct()
+gdp_ldc <- gdp %>%
+  inner_join(ldc_codes, by = "Code")
+gdp_ldc_growth <- gdp_ldc %>%
+  arrange(Code, Year) %>%
+  group_by(Code) %>%
+  mutate(
+    GDP_lag    = lag(gdp_pc_ppp),
+    gdp_growth = (gdp_pc_ppp - GDP_lag) / GDP_lag * 100
+  ) %>%
+  ungroup()
+gdp_ldc_growth <- gdp_ldc_growth %>%
+  left_join(continents, by = "Code")
+ldc_target_counts <- gdp_ldc_growth %>%
+  filter(Year >= 2016,
+         Year <= 2021,
+         !is.na(Continent),
+         !is.na(gdp_growth)) %>%
+  mutate(
+    target = ifelse(gdp_growth >= 7,
+                    "Meets target (≥ 7%)",
+                    "Below target")
+  ) %>%
+  group_by(Year, target, Continent) %>%
+  summarise(n_ldc = length(unique(Code)), .groups = "drop")
+all_years      <- 2016:2021
+all_targets    <- c("Meets target (≥ 7%)", "Below target")
+all_continents <- unique(gdp_ldc_growth$Continent)
+
+full_grid <- expand.grid(
+  Year      = all_years,
+  target    = all_targets,
+  Continent = all_continents,
+  stringsAsFactors = FALSE
+)
+
+ldc_target_complete <- full_grid %>%
+  left_join(ldc_target_counts,
+            by = c("Year", "target", "Continent")) %>%
+  mutate(n_ldc = ifelse(is.na(n_ldc), 0, n_ldc))
+
+
+
+ldc_target_complete <- ldc_target_complete %>%
+  mutate(
+    target_short = ifelse(target == "Meets target (≥ 7%)", ">=7%", "<7%"),
+    YearTarget   = paste0(Year, " (", target_short, ")")
+  )
+
+ordered_levels <- ldc_target_complete %>%
+  arrange(Year, desc(target_short)) %>%   # >=7% first, then <7%
+  pull(YearTarget) %>%
+  unique()
+
+ldc_target_complete$YearTarget <- factor(ldc_target_complete$YearTarget,
+                                         levels = ordered_levels)
+
+
+ggplot(ldc_target_complete,
+       aes(x = YearTarget,
+           y = n_ldc,
+           fill = Continent)) +
+  geom_bar(stat = "identity") +
+  labs(
+    x = "Year and Target Group",
+    y = "Number of LDCs",
+    title = "LDCs Meeting / Not Meeting 7% GDP per Capita Growth Target\nStacked by Continent (2016–2021)",
+    fill = "Continent"
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
