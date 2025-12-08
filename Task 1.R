@@ -719,6 +719,7 @@ LDCs_According_Growth_Complete$Year_Status <- factor(LDCs_According_Growth_Compl
 x_labels <- LDCs_According_Growth_Complete %>%
   distinct(Year_Status, Year, Growth_Status)
 
+
 # Graph showing number of LDCs that did not achieve or achieved 7% GDP per capita Growth Rate
 Graph_LDCs_Growth_Status <- ggplot(LDCs_According_Growth_Complete) +
   aes(x = Year_Status, y = LDCs_Number, fill = Continent) +
