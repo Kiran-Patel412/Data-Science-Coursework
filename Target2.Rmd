@@ -182,10 +182,10 @@ ggplot(neet_continent_year,
   geom_point(data = neet_key_years, size = 2) +
   annotate("text",
            x = 2007.5, y = max_neet + 1,
-           label = "Pre-SDG period") +
+           label = "Pre-SDG") +
   annotate("text",
            x = 2017.5, y = max_neet + 1,
-           label = "SDG implementation period") +
+           label = "SDG implementation") +
   scale_color_manual(values = continent_colors) +
   ggtitle("Are continents reducing NEET by 2020?") +
   xlab("Year") +
@@ -287,7 +287,7 @@ max_unemp <- max(unemp_continent_year$unemp_avg, na.rm = TRUE)
 
 ---
 
-Graph 4: Youth unemployment trend with SDG structure
+Graph 4: Youth unemployment trend (weighted) with SDG structure
 
 ```{r graph-unemp-trend}
 unemp_key_years <- unemp_continent_year %>%
@@ -308,10 +308,10 @@ ggplot(unemp_continent_year,
   geom_point(data = unemp_key_years, size = 2) +
   annotate("text",
            x = 2007.5, y = max_unemp + 1,
-           label = "Pre-SDG period") +
+           label = "Pre-SDG") +
   annotate("text",
            x = 2017.5, y = max_unemp + 1,
-           label = "SDG implementation period") +
+           label = "SDG implementation") +
   scale_color_manual(values = continent_colors) +
   ggtitle("Youth unemployment by continent") +
   xlab("Year") +
