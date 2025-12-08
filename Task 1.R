@@ -17,6 +17,9 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(sf)
 
+
+# Background for Task 1
+
 # Arrange data frame so all countries in the same continent are listed together
 Sorted_continents <- continents.according.to.our.world.in.data %>%
   arrange(Continent) %>%
@@ -370,34 +373,81 @@ Graph_High_Income <- ggplot(High_Income) +
   theme_minimal()
 
 
-# Save the graphs
-ggsave(
-  filename = "Low Income Countries GDP Growth Rate.png",
-  plot = Graph_Low_Income,
-  width = 12,
-  height = 8,
-  # width and height chosen to ensure entire plot is saved
-)
-ggsave(
-  filename = "Lower Middle Income Countries GDP Growth Rate.png",
-  plot = Graph_Lower_Middle_Income,
-  width = 12,
-  height = 8,
-)
-ggsave(
-  filename = "Upper Middle Income Countries GDP Growth Rate.png",
-  plot = Graph_Upper_Middle_Income,
-  width = 12,
-  height = 8,
-)
-ggsave(
-  filename = "High Income Countries GDP Growth Rate.png",
-  plot = Graph_High_Income,
-  width = 12,
-  height = 8,
-)
 
-# Create data frames of countries that met their GDP Growth Rate Target in 2021 for each Income Group per Continent per Year
+# Calculate mean GDP per capita Growth Rate for each Continent within each income group
+Average_Low_Income <- Low_Income %>%
+  group_by(Continent, Year) %>%
+  summarise(Mean_GDP_Growth_Rate = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
+  ungroup()
+
+Average_Lower_Middle_Income <- Lower_Middle_Income %>%
+  group_by(Continent, Year) %>%
+  summarise(Mean_GDP_Growth_Rate = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
+  ungroup()
+
+Average_Upper_Middle_Income <- Upper_Middle_Income %>%
+  group_by(Continent, Year) %>%
+  summarise(Mean_GDP_Growth_Rate = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
+  ungroup()
+
+Average_High_Income <- High_Income %>%
+  group_by(Continent, Year) %>%
+  summarise(Mean_GDP_Growth_Rate = mean(GDP_Growth_Rate, na.rm = TRUE)) %>%
+  ungroup()
+
+
+# Graphs of mean GDP per capita Growth Rates in each Continent for each income group
+Graph_Average_Low_Income <- ggplot(Average_Low_Income) +
+  aes(x = Year, y = Mean_GDP_Growth_Rate, colour = Continent) +
+  geom_line(linewidth = 0.2) +
+  geom_hline(yintercept = 7, linetype = "dashed", colour = "black") +
+  labs(
+    title = "Average GDP per capita Growth Rate per Continent against Time (Low Income)",
+    x = "Year",
+    y = "GDP per capita Growth Rate (%)"
+  ) +
+  theme_minimal()
+
+Graph_Average_Lower_Middle_Income <- ggplot(Average_Lower_Middle_Income)+
+  aes(x = Year, y = Mean_GDP_Growth_Rate, colour = Continent) +
+  geom_line(linewidth = 0.2) +
+  geom_hline(yintercept = 5, linetype = "dashed", colour = "black") +
+  labs(
+    title = "Average GDP per capita Growth Rate per Continent against Time (Lower Middle Income)",
+    x = "Year",
+    y = "GDP per capita Growth Rate (%)"
+  ) +
+  theme_minimal()
+
+Graph_Average_Upper_Middle_Income <- ggplot(Average_Upper_Middle_Income)+
+  aes(x = Year, y = Mean_GDP_Growth_Rate, colour = Continent) +
+  geom_line(linewidth = 0.2) +
+  geom_hline(yintercept = 4, linetype = "dashed", colour = "black") +
+  labs(
+    title = "Average GDP per capita Growth Rate per Continent against Time (Upper Middle Income)",
+    x = "Year",
+    y = "GDP per capita Growth Rate (%)"
+  ) +
+  theme_minimal()
+
+Graph_Average_High_Income <- ggplot(Average_High_Income)+
+  aes(x = Year, y = Mean_GDP_Growth_Rate, colour = Continent) +
+  geom_line(linewidth = 0.2) +
+  geom_hline(yintercept = 2, linetype = "dashed", colour = "black") +
+  labs(
+    title = "Average GDP per capita Growth Rate per Continent against Time (High Income)",
+    x = "Year",
+    y = "GDP per capita Growth Rate (%)"
+  ) +
+  theme_minimal()
+
+
+# Create data frame of total number of countries in each Continent
+Total_countries_in_Continent <- Sorted_continents %>%
+  group_by(Continent) %>%
+  summarise(Number_Countries = n())
+
+# Create data frames of number of countries per Continent that met their GDP Growth Rate Targets for each income group per Year
 Low_Income_With_Growth <- Low_Income %>%
   filter(GDP_Growth_Rate >= 7) %>%
   group_by(Year, Continent) %>%
@@ -430,26 +480,40 @@ High_Income_With_Growth <- High_Income %>%
   ) %>%
   ungroup()
 
+
 # Combine in a data frame
 Achieved_Growth <- rbind(Low_Income_With_Growth, Lower_Middle_Income_With_Growth, Upper_Middle_Income_With_Growth, High_Income_With_Growth)
 
-# Graph of number of countries that met their GDP Growth Rate Target per Year by Continent
-Graph_Achieved_Growth <- ggplot(Achieved_Growth) +
-  aes(x = Year, y = Number, fill = Continent) +
-  geom_bar(stat = "identity") +
-  scale_x_continuous(breaks = unique(Achieved_Growth$Year)) +
+# Create data frame of proportion of countries per Continent that met their GDP Growth Rate Targets per Year
+Proportion_Achieved_Growth <- Achieved_Growth %>%
+  group_by(Year, Continent) %>%
+  summarise(Total_Number = sum(Number)) %>%
+  ungroup() %>%
+  left_join(Total_countries_in_Continent, by = "Continent") %>%
+  mutate(Proportion = Total_Number / Number_Countries)
+
+# Graph of proportion of countries that met their GDP Growth Rate Target per Year by Continent
+Graph_Proportion_Achieved_Growth <- ggplot(Proportion_Achieved_Growth) +
+  aes(x = Year, y = Proportion, fill = Continent) +
+  geom_col() +
+  facet_wrap(~Continent) +
   labs(
     x = "Year",
-    y = "Number of Countries that met their GDP per capita Growth Rate Target",
-    fill = "Continent",
-    title = "Countries that met their GDP per capita Growth Rate Target by Continents per Year"
+    y = "Proportion",
+    title = "Proportion of Countries that met GDP per capita Growth Rate Target by Continent"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  
+  # Increase facet label size
+  theme(
+    strip.text = element_text(size = 15)
+  )
+
 
 # Save the graph
 ggsave(
-  filename = "Number of Countries that met their GDP Growth Rate Target.png",
-  plot = Graph_Achieved_Growth,
+  filename = "Proportion of Countries that met their GDP Growth Rate Target.png",
+  plot = Graph_Proportion_Achieved_Growth,
   width = 12,
   height = 8,
 )
@@ -508,11 +572,11 @@ max_year <- max(LDCs_GDP_Growth_Rate$Year, na.rm = TRUE)
 
 
 # Create new data frame to reduce timeframe to be the recent 5 years
-LDC_Growth_Recent <- LDCs_GDP_Growth_Rate %>%
+LDC_GDP_Growth_Recent <- LDCs_GDP_Growth_Rate %>%
   filter(Year >= max_year - 4)
 
 # Graph of LDCs GDP growth rate from 2017-2021 against time
-Graph_LDCs_Recent <- ggplot(LDC_Growth_Recent) +
+Graph_LDCs_Recent <- ggplot(LDC_GDP_Growth_Recent) +
   aes(x = Year, y = GDP_Growth_Rate, group = `Country or Area`, colour = `Country or Area`) +
   geom_line(linewidth = 0.2) +
   
@@ -539,6 +603,9 @@ Continents_LDC_Growth_Rate <- LDCs_GDP_Growth_Rate %>%
 Graph_Continents_LDC_Growth_Rate <- ggplot(Continents_LDC_Growth_Rate) +
   aes(x = Year, y = Mean_Growth, colour = Continent) +
   geom_line(linewidth = 0.2) +
+  
+  # Add a dashed line at 7% target
+  geom_hline(yintercept = 7, linetype = "dashed", colour = "black", linewidth = 0.2) +
   labs(
     title = "Average GDP per capita Growth Rate by Continent (LDCs)",
     x = "Year",
@@ -603,34 +670,83 @@ ggsave(
   height = 8,
 )
 
-# Create data frame of only LDCs that met 7% Growth Rate per Continent per Year
-LDCs_With_Growth <- LDC_Growth_Recent %>%
-  filter(GDP_Growth_Rate >= 7) %>%
-  group_by(Year, Continent) %>%
-  summarise(
-    LDCs_Number = length(unique(`Country or Area`))
+
+
+
+
+LDCs_According_Growth <- LDC_GDP_Growth_Recent %>%
+  mutate(
+    Target = ifelse(GDP_Growth_Rate >= 7,
+                    "Meets target (≥ 7%)",
+                    "Below target")
   ) %>%
+  group_by(Year, Target, Continent) %>%
+  summarise(LDCs_Number = length(unique(Code))) %>%
   ungroup()
 
-# Graph of number of LDCs that achieved 7% GDP Growth Rate per Year by Continent
-ggplot(ldc_target_complete,
-       aes(x = YearTarget,
-           y = n_ldc,
-           fill = Continent)) +
+All_Years      <- 2017:2021
+All_Targets    <- c("Meets target (≥ 7%)", "Below target")
+All_Continents <- unique(LDC_GDP_Growth_Recent$Continent)
+
+Full_Grid <- expand.grid(
+  Year      = All_Years,
+  Target    = All_Targets,
+  Continent = All_Continents,
+  stringsAsFactors = FALSE
+)
+
+LDCs_According_Growth_Complete <- Full_Grid %>%
+  left_join(LDCs_According_Growth,
+            by = c("Year", "Target", "Continent")) %>%
+  mutate(LDCs_Number = ifelse(is.na(LDCs_Number), 0, LDCs_Number))
+
+
+LDCs_According_Growth_Complete <- LDCs_According_Growth_Complete %>%
+  mutate(
+    Growth_Status = ifelse(Target == "Meets target (≥ 7%)", "Achieved", "Did Not Achieve"),
+    Year_Status   = paste0(Year, " (", Growth_Status, ")")
+  )
+
+Order <- LDCs_According_Growth_Complete %>%
+  arrange(Year, desc(Growth_Status)) %>%
+  pull(Year_Status) %>%
+  unique()
+
+LDCs_According_Growth_Complete$Year_Status <- factor(LDCs_According_Growth_Complete$Year_Status,
+                                                     levels = Order)
+
+# Prepare unique labels for custom x-axis labels (one layer for Year, another for Achievement Status)
+x_labels <- LDCs_According_Growth_Complete %>%
+  distinct(Year_Status, Year, Growth_Status)
+
+# Graph showing number of LDCs that did not achieve or achieved 7% GDP per capita Growth Rate
+Graph_LDCs_Growth_Status <- ggplot(LDCs_According_Growth_Complete) +
+  aes(x = Year_Status, y = LDCs_Number, fill = Continent) +
   geom_bar(stat = "identity") +
   labs(
-    x = "Year and Target Group",
+    x = "Year and Achievement Status",
     y = "Number of LDCs",
-    title = "LDCs Meeting / Not Meeting 7% GDP per Capita Growth Target\nStacked by Continent (2016–2021)",
+    title = "Number of LDCs that did not achieve or achieved 7% GDP per capita Growth Rate",
     fill = "Continent"
   ) +
   theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(
+    axis.text.x = element_blank(),  # Remove default x-axis labels
+    axis.ticks.x = element_blank(),
+    plot.margin = margin(20, 20, 40, 20)  # Add extra bottom space for custom labels
+  ) +
+  # Add two-row x-axis labels
+  geom_text(aes(x = Year_Status, y = -0.5, label = Year), 
+            data = x_labels, inherit.aes = FALSE, vjust = 1.2) +  # Bottom row shows Year
+  geom_text(aes(x = Year_Status, y = -1.5, label = Growth_Status), 
+            data = x_labels, inherit.aes = FALSE, vjust = 1.2) +  # Top row shows Achievement Status
+  coord_cartesian(clip = "off")  # allow text outside plot area
+
 
 # Save the graph
 ggsave(
-  filename = "Number of LDCs achieved GDP Growth Rate.png",
-  plot = Graph_LDCs_Achieved_Growth,
+  filename = "Number of LDCs that achieved 7% GDP Growth Rate or not.png",
+  plot = Graph_LDCs_Growth_Status,
   width = 12,
   height = 8
 )
