@@ -745,7 +745,7 @@ Graph_LDCs_Growth_Status <- ggplot(LDCs_According_Growth_Complete) +
 
 # Save the graph
 ggsave(
-  filename = "Number of LDCs that achieved 7% GDP Growth Rate or not.png",
+  filename = "Number of LDCs that achieved GDP Growth Rate Target or not.png",
   plot = Graph_LDCs_Growth_Status,
   width = 12,
   height = 8
