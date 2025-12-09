@@ -3,7 +3,7 @@ title: "Target 2"
 output: pdf_document
 ---
 
-First, We load all required packages and define a color palette for continents.
+First, we load the packages we need and define a custom colour palette for continents that will be reused in all plots.
 
 ```{r setup, message=FALSE, warning=FALSE}
 library(tidyverse)
@@ -11,19 +11,18 @@ library(scales)
 library(ggthemes)
 
 continent_colors <- c(
-  "Asia"          = "#377EB8",
-  "Europe"        = "#4DAF4A",
-  "Africa"        = "#984EA3",
-  "North America" = "#E41A1C",
-  "South America" = "#FF7F00",
-  "Oceania"       = "#A65628"
+  "Asia" = "#377EB8",
+  "Europe"= "#4DAF4A",
+  "Africa" = "#984EA3",
+  "North America"= "#E41A1C",
+  "South America"= "#FF7F00",
+  "Oceania"= "#A65628"
 )
 ```
-
 ---
 
-Load datasets:
-We import the NEET dataset, the continent mapping, youth unemployment, and population.
+Then, we import all four raw datasets:
+NEET, continent classification, youth unemployment (WDI) and population.
 
 ```{r load-data}
 neet_raw <- read_csv("youth-not-in-education-employment-training.csv")
@@ -34,23 +33,18 @@ population_raw <- read_csv("population.csv")
 
 ---
 
-Clean NEET data (limit to 2020)
+Here we clean the NEET data:
+we keep only the relevant columns, convert year and NEET values to numeric, and restrict the sample to 1990–2020 with non-missing values.
 
 ```{r clean-neet}
 neet <- neet_raw %>%
-  select(
-    Entity,
-    Code,
-    Year,
-    neet_share = `Share of youth not in education, employment or training, total (% of youth population)`
+  select(Entity, Code, Year, neet_share = `Share of youth not in education, employment or training, total (% of youth population)`
   ) %>%
   mutate(
-    Year       = as.integer(Year),
+    Year = as.integer(Year),
     neet_share = as.numeric(neet_share)
   ) %>%
-  filter(
-    !is.na(Code),
-    !is.na(neet_share),
+  filter(!is.na(Code), !is.na(neet_share),
     Year >= 1990,
     Year <= 2020
   )
@@ -58,27 +52,26 @@ neet <- neet_raw %>%
 
 ---
 
-Clean continent dataset
+We cleans the continent lookup table:
+we keep country name, ISO3 code and continent, drop duplicate codes, and remove Antarctica which we do not analyse.
 
 ```{r clean-continents}
-continents <- continents_raw %>%
-  select(Entity, Code, Continent) %>%
-  distinct(Code, .keep_all = TRUE) %>%
-  filter(Continent != "Antarctica")
+continents <- continents_raw %>% select(Entity, Code, Continent) %>%
+  distinct(Code, .keep_all = TRUE) %>% filter(Continent != "Antarctica")
 ```
 
 ---
 
-Attach continent to NEET
+We now attach the continent information to each NEET observation by joining on both country code and name.
 
 ```{r merge-neet-continent}
-neet_continent <- neet %>%
-  inner_join(continents, by = c("Code", "Entity"))
+neet_continent <- neet %>% inner_join(continents, by = c("Code", "Entity"))
 ```
 
 ---
 
-Clean youth unemployment (WDI)
+We also need to reshape and clean the WDI youth unemployment data:
+we go from wide (one column per year) to long format, rename columns, convert year and unemployment rate to numeric, restrict to 1990–2020, and then attach each country to its continent.
 
 ```{r clean-unemployment}
 year_cols <- names(youth_unemp_raw)[5:ncol(youth_unemp_raw)]
@@ -91,12 +84,12 @@ youth_unemp_long <- youth_unemp_raw %>%
     Indicator_Code = `Indicator Code`
   ) %>%
   pivot_longer(
-    cols      = all_of(year_cols),
-    names_to  = "Year",
+    cols = all_of(year_cols),
+    names_to = "Year",
     values_to = "youth_unemployment"
   ) %>%
   mutate(
-    Year               = as.integer(Year),
+    Year = as.integer(Year),
     youth_unemployment = as.numeric(youth_unemployment)
   ) %>%
   filter(
@@ -106,25 +99,24 @@ youth_unemp_long <- youth_unemp_raw %>%
   )
 
 youth_unemp_continent <- youth_unemp_long %>%
-  inner_join(
-    continents,
-    by = c("Country_Code" = "Code", "Country_Name" = "Entity")
+  inner_join(continents, by = c("Country_Code" = "Code", "Country_Name" = "Entity")
   )
 ```
 
 ---
 
-Clean population data
+Here we clean the population data:
+we rename variables for clarity, convert year and population to numeric, and keep observations between 1990 and 2020 with valid population values.
 
 ```{r clean-population}
 population <- population_raw %>%
   rename(
     Country_Name = `Country Name`,
     Country_Code = `Country Code`,
-    population   = Value
+    population = Value
   ) %>%
   mutate(
-    Year       = as.integer(Year),
+    Year = as.integer(Year),
     population = as.numeric(population)
   ) %>%
   filter(
@@ -136,7 +128,8 @@ population <- population_raw %>%
 
 ---
 
-Combine NEET + population, compute weighted averages
+This chunk merges NEET with population and computes population-weighted NEET averages by continent and year.
+We also store the maximum NEET value for later use in graph scaling.
 
 ```{r neet-pop-merge}
 neet_pop <- neet_continent %>%
@@ -148,9 +141,9 @@ neet_pop <- neet_continent %>%
 neet_continent_year <- neet_pop %>%
   group_by(Continent, Year) %>%
   summarise(
-    total_pop      = sum(population),
+    total_pop = sum(population),
     total_neet_pop = sum(neet_share/100 * population),
-    .groups        = "drop"
+    .groups = "drop"
   ) %>%
   mutate(
     neet_avg = (total_neet_pop / total_pop) * 100
@@ -161,7 +154,8 @@ max_neet <- max(neet_continent_year$neet_avg, na.rm = TRUE)
 
 ---
 
-Graph 1: NEET trend (population-weighted) with SDG structure
+Graph 1: trend in population-weighted NEET by continent
+We shade the SDG period (2015–2020), draw a dashed line at 2015, highlight the SDG years with a thicker line, and label the pre-SDG and SDG implementation periods.
 
 ```{r graph-neet-trend}
 neet_key_years <- neet_continent_year %>%
@@ -197,7 +191,8 @@ ggplot(neet_continent_year,
 
 ---
 
-NEET values for 2000, 2015, 2020
+Here we extract the population-weighted NEET levels for three key years (2000, 2015, 2020) by continent.
+These values are used to compute changes for the dumbbell plots.
 
 ```{r extract-neet-years}
 neet_2000 <- neet_continent_year %>% filter(Year == 2000) %>% select(Continent, neet_2000 = neet_avg)
@@ -207,14 +202,17 @@ neet_2020 <- neet_continent_year %>% filter(Year == 2020) %>% select(Continent, 
 
 ---
 
-Graph 2: NEET change 2000 → 2020 (dumbbell)
+Graph 2:
+We visualise the change in NEET between 2000 and 2020.
+For each continent we draw a vertical line from 2000 to 2020, put a circle at the starting value, a triangle (up/down) at the end value, and place a label on the right showing the change in percentage points.
 
 ```{r graph-neet-change-2000}
 neet_2000_2020 <- neet_2000 %>%
   inner_join(neet_2020, by = "Continent") %>%
   mutate(
     change_2000_2020 = neet_2020 - neet_2000,
-    mid_neet         = (neet_2000 + neet_2020) / 2
+    mid_neet = (neet_2000 + neet_2020) / 2,
+    end_shape = ifelse(change_2000_2020 >= 0, 24, 25)  
   )
 
 ggplot(neet_2000_2020, aes(x = Continent, colour = Continent)) +
@@ -222,10 +220,13 @@ ggplot(neet_2000_2020, aes(x = Continent, colour = Continent)) +
                    y = neet_2000, yend = neet_2020),
                linewidth = 1) +
   geom_point(aes(y = neet_2000), size = 3, shape = 16) +
-  geom_point(aes(y = neet_2020), size = 3, shape = 17) +
+  geom_point(aes(y = neet_2020, shape = end_shape), size = 3) +
+  scale_shape_identity() +
   geom_text(aes(y = mid_neet,
                 label = paste0(round(change_2000_2020, 1), " pp")),
-            vjust = -0.5, size = 3) +
+            position = position_nudge(x = 0.18),
+            hjust = 0,
+            size = 3) +
   scale_color_manual(values = continent_colors) +
   ggtitle("Change in NEET from 2000 to 2020 ") +
   xlab("Continent") +
@@ -236,14 +237,17 @@ ggplot(neet_2000_2020, aes(x = Continent, colour = Continent)) +
 
 ---
 
-Graph 3: NEET change 2015 → 2020 (dumbbell)
+Graph 3:
+We repeat the same dumbbell design but now compares NEET levels between 2015 and 2020.
+It highlights whether NEET improved or worsened during the SDG period.
 
 ```{r graph-neet-change-2015}
 neet_2015_2020 <- neet_2015 %>%
   inner_join(neet_2020, by = "Continent") %>%
   mutate(
     change_2015_2020 = neet_2020 - neet_2015,
-    mid_neet         = (neet_2015 + neet_2020) / 2
+    mid_neet         = (neet_2015 + neet_2020) / 2,
+    end_shape        = ifelse(change_2015_2020 >= 0, 24, 25)
   )
 
 ggplot(neet_2015_2020, aes(x = Continent, colour = Continent)) +
@@ -251,10 +255,13 @@ ggplot(neet_2015_2020, aes(x = Continent, colour = Continent)) +
                    y = neet_2015, yend = neet_2020),
                linewidth = 1) +
   geom_point(aes(y = neet_2015), size = 3, shape = 16) +
-  geom_point(aes(y = neet_2020), size = 3, shape = 17) +
+  geom_point(aes(y = neet_2020, shape = end_shape), size = 3) +
+  scale_shape_identity() +
   geom_text(aes(y = mid_neet,
                 label = paste0(round(change_2015_2020, 1), " pp")),
-            vjust = -0.5, size = 3) +
+            position = position_nudge(x = 0.18),
+            hjust = 0,
+            size = 3) +
   scale_color_manual(values = continent_colors) +
   ggtitle("Change in NEET from 2015 to 2020") +
   xlab("Continent") +
@@ -265,7 +272,8 @@ ggplot(neet_2015_2020, aes(x = Continent, colour = Continent)) +
 
 ---
 
-Combine unemployment + population, compute weighted averages
+This chunk merges youth unemployment with population and computes population-weighted unemployment rates by continent and year.
+We again store the maximum value to control the y-axis in the plots.
 
 ```{r unemp-pop-merge}
 unemp_pop <- youth_unemp_continent %>%
@@ -287,7 +295,8 @@ max_unemp <- max(unemp_continent_year$unemp_avg, na.rm = TRUE)
 
 ---
 
-Graph 4: Youth unemployment trend (weighted) with SDG structure
+Graph 4: 
+The evolution of population-weighted youth unemployment by continent, using the same SDG visual structure as Graph 1 (pre-SDG vs SDG implementation period).
 
 ```{r graph-unemp-trend}
 unemp_key_years <- unemp_continent_year %>%
@@ -323,7 +332,7 @@ ggplot(unemp_continent_year,
 
 ---
 
-Youth unemployment values for 2000, 2015, 2020
+Here we extract population-weighted unemployment levels for 2000, 2015 and 2020 by continent, to compute changes for the remaining dumbbell plots.
 
 ```{r extract-unemp-years}
 unemp_2000 <- unemp_continent_year %>% filter(Year == 2000) %>% select(Continent, unemp_2000 = unemp_avg)
@@ -333,14 +342,17 @@ unemp_2020 <- unemp_continent_year %>% filter(Year == 2020) %>% select(Continent
 
 ---
 
-Graph 5: Change in youth unemployment 2000 → 2020 (dumbbell)
+Graph 5:
+We want to see the change in youth unemployment between 2000 and 2020.
+As in Graph 2, each continent has a vertical line from start to end, a circle at the 2000 value, a triangle at the 2020 value (up or down), and a label to the right with the change in percentage points.
 
 ```{r graph-unemp-change-2000}
 unemp_2000_2020 <- unemp_2000 %>%
   inner_join(unemp_2020, by = "Continent") %>%
   mutate(
     change_2000_2020 = unemp_2020 - unemp_2000,
-    mid_unemp        = (unemp_2000 + unemp_2020) / 2
+    mid_unemp        = (unemp_2000 + unemp_2020) / 2,
+    end_shape        = ifelse(change_2000_2020 >= 0, 24, 25)
   )
 
 ggplot(unemp_2000_2020, aes(x = Continent, colour = Continent)) +
@@ -348,10 +360,13 @@ ggplot(unemp_2000_2020, aes(x = Continent, colour = Continent)) +
                    y = unemp_2000, yend = unemp_2020),
                linewidth = 1) +
   geom_point(aes(y = unemp_2000), size = 3, shape = 16) +
-  geom_point(aes(y = unemp_2020), size = 3, shape = 17) +
+  geom_point(aes(y = unemp_2020, shape = end_shape), size = 3) +
+  scale_shape_identity() +
   geom_text(aes(y = mid_unemp,
                 label = paste0(round(change_2000_2020, 1), " pp")),
-            vjust = -0.5, size = 3) +
+            position = position_nudge(x = 0.18),
+            hjust = 0,
+            size = 3) +
   scale_color_manual(values = continent_colors) +
   ggtitle("Change in youth unemployment from 2000 to 2020") +
   xlab("Continent") +
@@ -362,14 +377,16 @@ ggplot(unemp_2000_2020, aes(x = Continent, colour = Continent)) +
 
 ---
 
-Graph 6: Change in youth unemployment 2015 → 2020 (dumbbell)
+Graph 6:
+We apply the same visual logic to the SDG period only, comparing youth unemployment between 2015 and 2020 for each continent.
 
 ```{r graph-unemp-change-2015}
 unemp_2015_2020 <- unemp_2015 %>%
   inner_join(unemp_2020, by = "Continent") %>%
   mutate(
     change_2015_2020 = unemp_2020 - unemp_2015,
-    mid_unemp        = (unemp_2015 + unemp_2020) / 2
+    mid_unemp = (unemp_2015 + unemp_2020) / 2,
+    end_shape = ifelse(change_2015_2020 >= 0, 24, 25)
   )
 
 ggplot(unemp_2015_2020, aes(x = Continent, colour = Continent)) +
@@ -377,10 +394,13 @@ ggplot(unemp_2015_2020, aes(x = Continent, colour = Continent)) +
                    y = unemp_2015, yend = unemp_2020),
                linewidth = 1) +
   geom_point(aes(y = unemp_2015), size = 3, shape = 16) +
-  geom_point(aes(y = unemp_2020), size = 3, shape = 17) +
+  geom_point(aes(y = unemp_2020, shape = end_shape), size = 3) +
+  scale_shape_identity() +
   geom_text(aes(y = mid_unemp,
                 label = paste0(round(change_2015_2020, 1), " pp")),
-            vjust = -0.5, size = 3) +
+            position = position_nudge(x = 0.18),
+            hjust = 0,
+            size = 3) +
   scale_color_manual(values = continent_colors) +
   ggtitle("Change in youth unemployment from 2015 to 2020") +
   xlab("Continent") +
